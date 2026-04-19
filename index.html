@@ -1,0 +1,214 @@
+ج<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لُدن - منصة التعلم</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: 'Tajawal', sans-serif;
+  background: #ffffff;
+  transition: 0.4s;
+}
+
+.hero-bg {
+  background: radial-gradient(circle at top, #dbeafe, #ffffff);
+}
+
+.card {
+  border: 2px solid #f1f5f9;
+  transition: 0.3s;
+}
+
+.card:hover {
+  border-color: #3b82f6;
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(59,130,246,0.2);
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: 1s;
+}
+
+.fade-in.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* وضع ليلي */
+.dark {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+.dark .card {
+  background: #1e293b;
+  border-color: #334155;
+}
+</style>
+
+</head>
+
+<body class="text-slate-800">
+
+<!-- NAV -->
+<nav class="fixed top-0 w-full bg-white border-b z-50 dark:bg-slate-900 dark:border-slate-700">
+  <div class="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
+
+    <h1 class="text-2xl font-black text-blue-600">لُدن</h1>
+
+    <div class="flex gap-4 font-bold text-sm md:text-base">
+
+      <a href="#courses">الدورات</a>
+      <a href="#library">المكتبة</a>
+      <a href="#team">الفريق</a>
+      <a href="#contact">تواصل</a>
+
+      <button onclick="toggleBig()" class="bg-black text-white px-2 py-1 rounded text-xs">🧓</button>
+      <button onclick="toggleMode()" class="bg-blue-600 text-white px-2 py-1 rounded text-xs">🌗</button>
+
+    </div>
+
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-bg pt-40 pb-24 text-center fade-in">
+
+  <div class="text-6xl mb-6">👴</div>
+
+  <h2 class="text-5xl font-black mb-4">التقنية برفق</h2>
+  <p class="text-xl text-slate-500 mb-6">منصة تعليم مبسطة لكبار السن</p>
+
+</section>
+
+<!-- COURSES -->
+<section id="courses" class="py-20 px-6 bg-slate-50 fade-in dark:bg-slate-900">
+
+  <h3 class="text-3xl font-bold text-center mb-10">الدورات 🎓</h3>
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
+
+    <div class="card p-6 rounded-2xl bg-white dark:bg-slate-800">تشغيل الكمبيوتر</div>
+    <div class="card p-6 rounded-2xl bg-white dark:bg-slate-800">الإنترنت</div>
+    <div class="card p-6 rounded-2xl bg-white dark:bg-slate-800">البرمجة</div>
+
+  </div>
+
+</section>
+
+<!-- LIBRARY -->
+<section id="library" class="py-20 px-6 fade-in">
+
+  <h3 class="text-3xl font-bold text-center mb-10">المكتبة 📚</h3>
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
+
+    <div class="card rounded-2xl overflow-hidden bg-white dark:bg-slate-800">
+      <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f" class="h-40 w-full object-cover">
+      <div class="p-4">
+        <h4 class="font-bold">أساسيات الحاسوب</h4>
+        <button onclick="speak('أساسيات الحاسوب')" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg w-full">
+          🔊 قراءة
+        </button>
+      </div>
+    </div>
+
+    <div class="card rounded-2xl overflow-hidden bg-white dark:bg-slate-800">
+      <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794" class="h-40 w-full object-cover">
+      <div class="p-4">
+        <h4 class="font-bold">الإنترنت</h4>
+        <button onclick="speak('الإنترنت')" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg w-full">
+          🔊 قراءة
+        </button>
+      </div>
+    </div>
+
+    <div class="card rounded-2xl overflow-hidden bg-white dark:bg-slate-800">
+      <img src="https://images.unsplash.com/photo-1517430816045-df4b7de11d1d" class="h-40 w-full object-cover">
+      <div class="p-4">
+        <h4 class="font-bold">البرمجة</h4>
+        <button onclick="speak('البرمجة')" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg w-full">
+          🔊 قراءة
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+<!-- TEAM -->
+<section id="team" class="py-20 px-6 bg-slate-50 fade-in dark:bg-slate-900">
+
+  <h3 class="text-3xl font-bold text-center mb-10">فريق العمل 👥</h3>
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-6 text-center">
+
+    <div class="card p-4 rounded-2xl bg-white dark:bg-slate-800">خالد - مدير</div>
+    <div class="card p-4 rounded-2xl bg-white dark:bg-slate-800">فواز - مطور</div>
+    <div class="card p-4 rounded-2xl bg-white dark:bg-slate-800">تركي - تصميم</div>
+    <div class="card p-4 rounded-2xl bg-white dark:bg-slate-800">محمد - تحليل</div>
+
+  </div>
+
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="py-20 bg-blue-600 text-white text-center fade-in">
+
+  <h3 class="text-3xl font-bold mb-6">تواصل معنا 📞</h3>
+
+  <p>واتساب: 05XXXXXXXX</p>
+  <p>سناب: lodon.sa</p>
+  <p>X: @london_sa</p>
+
+</section>
+
+<footer class="bg-black text-white text-center p-6">
+© لُدن 2026
+</footer>
+
+<script>
+
+/* صوت */
+function speak(text){
+  let msg = new SpeechSynthesisUtterance(text);
+  msg.lang = "ar";
+  speechSynthesis.speak(msg);
+}
+
+/* ليلي */
+function toggleMode(){
+  document.body.classList.toggle("dark");
+}
+
+/* كبير السن */
+function toggleBig(){
+  document.body.classList.toggle("big-mode");
+}
+
+/* ظهور */
+const elements = document.querySelectorAll('.fade-in');
+
+window.addEventListener('scroll', ()=>{
+  elements.forEach(el=>{
+    if(el.getBoundingClientRect().top < window.innerHeight - 80){
+      el.classList.add('show');
+    }
+  });
+});
+
+window.dispatchEvent(new Event('scroll'));
+
+</script>
+
+</body>
+</html>
