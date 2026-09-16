@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة العمليات وااختراق الشبكات - CYBER & INTEL V6</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --bg-color: #020408;
+            --panel-bg: rgba(6, 12, 20, 0.95);
+            --border-color: #00e5ff;
+            --text-color: #d1d5db;
+            --accent-red: #ff2a2a;
+            --accent-yellow: #ffb700;
+            --accent-green: #00ff88;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); color: var(--text-color); font-family: system-ui, -apple-system, sans-serif; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        header { background: #010204; border-bottom: 1px solid rgba(0, 229, 255, 0.3); padding: 8px 16px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; }
+        .logo { font-size: 0.95rem; font-weight: bold; color: var(--border-color); display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); }
+        .nav-tabs { display: flex; gap: 8px; }
+        .tab-btn { background: rgba(0, 229, 255, 0.05); border: 1px solid rgba(0, 229, 255, 0.2); color: #fff; padding: 5px 12px; font-size: 0.78rem; cursor: pointer; border-radius: 3px; }
+        .tab-btn.active, .tab-btn:hover { background: rgba(0, 229, 255, 0.2); border-color: var(--border-color); color: var(--border-color); }
+        .status-badge { background: rgba(255, 42, 42, 0.15); color: var(--accent-red); border: 1px solid var(--accent-red); padding: 3px 8px; font-size: 0.72rem; border-radius: 3px; font-family: var(--font-mono); animation: pulse 2s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        .main-container { display: grid; grid-template-columns: 320px 1fr 400px; height: calc(100vh - 48px); gap: 5px; padding: 5px; background: #010203; }
+        .panel { background: var(--panel-bg); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 4px; display: flex; flex-direction: column; overflow: hidden; }
+        .panel-header { background: rgba(0, 229, 255, 0.08); border-bottom: 1px solid rgba(0, 229, 255, 0.2); padding: 8px 12px; font-weight: bold; color: var(--border-color); font-size: 0.82rem; display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); }
+
+        .list-container { overflow-y: auto; flex: 1; }
+        .item-card { padding: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); cursor: pointer; display: flex; gap: 10px; align-items: center; }
+        .item-card:hover, .item-card.active { background: rgba(0, 229, 255, 0.12); border-right: 4px solid var(--border-color); }
+        .code-icon { width: 42px; height: 42px; border-radius: 4px; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 0.7rem; font-weight: bold; background: rgba(0, 229, 255, 0.05); color: var(--border-color); flex-shrink: 0; }
+        .code-icon.sec { border-color: var(--accent-green); color: var(--accent-green); background: rgba(0, 255, 136, 0.05); }
+
+        .item-info h4 { font-size: 0.82rem; color: #fff; }
+        .item-info p { font-size: 0.72rem; color: #9ca3af; margin-top: 2px; }
+        .badge { display: inline-block; font-size: 0.65rem; padding: 2px 5px; border-radius: 2px; margin-top: 3px; font-weight: bold; font-family: var(--font-mono); }
+        .badge-red { background: rgba(255, 42, 42, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .badge-yellow { background: rgba(255, 183, 0, 0.2); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+        .badge-green { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+        #map { width: 100%; height: 100%; background: #05080c; }
+
+        .details-content { padding: 12px; overflow-y: auto; flex: 1; font-size: 0.82rem; }
+        .profile-header { text-align: center; margin-bottom: 12px; border-bottom: 1px dashed rgba(0, 229, 255, 0.2); padding-bottom: 12px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 4px; }
+        .info-label { color: #9ca3af; }
+        .info-val { color: var(--border-color); font-weight: bold; font-family: var(--font-mono); }
+
+        /* قسم خط الجوالات والمراقبة */
+        .phone-intercept-box { background: rgba(0, 229, 255, 0.03); border: 1px solid rgba(0, 229, 255, 0.2); padding: 8px; border-radius: 4px; margin-top: 10px; }
+        .phone-intercept-box h5 { color: var(--border-color); font-size: 0.78rem; font-family: var(--font-mono); margin-bottom: 6px; display: flex; justify-content: space-between; }
+
+        /* وحدة الاختراق الرقمي (Cyber Hack Terminal) */
+        .hack-panel { background: rgba(255, 42, 42, 0.03); border: 1px solid rgba(255, 42, 42, 0.3); border-radius: 4px; padding: 10px; margin-top: 12px; }
+        .hack-title { color: var(--accent-red); font-family: var(--font-mono); font-size: 0.78rem; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; }
+        .hack-btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px; }
+        .hack-btn { background: rgba(255, 42, 42, 0.1); border: 1px solid var(--accent-red); color: #fff; padding: 6px; font-size: 0.68rem; font-family: var(--font-mono); cursor: pointer; border-radius: 3px; transition: all 0.2s; }
+        .hack-btn:hover { background: rgba(255, 42, 42, 0.3); color: var(--accent-yellow); }
+        .terminal-screen { background: #000; border: 1px solid rgba(0, 255, 136, 0.3); height: 110px; padding: 6px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.65rem; color: var(--accent-green); border-radius: 3px; line-height: 1.3; }
+
+        /* غرفة اتصالات القطاع العسكري */
+        .comms-panel { height: 170px; background: #020406; border-top: 1px solid rgba(0, 229, 255, 0.3); display: flex; flex-direction: column; }
+        .comms-header { background: rgba(0, 255, 136, 0.1); border-bottom: 1px solid rgba(0, 255, 136, 0.2); padding: 6px 10px; font-size: 0.75rem; color: var(--accent-green); font-family: var(--font-mono); font-weight: bold; }
+        .chat-messages { flex: 1; padding: 8px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.72rem; display: flex; flex-direction: column; gap: 6px; }
+        .chat-msg { padding: 5px 8px; border-radius: 3px; max-width: 90%; line-height: 1.4; }
+        .msg-in { background: rgba(0, 229, 255, 0.1); border-right: 3px solid var(--border-color); align-self: flex-start; }
+        .msg-out { background: rgba(0, 255, 136, 0.15); border-left: 3px solid var(--accent-green); align-self: flex-end; color: #fff; }
+        .msg-sender { font-size: 0.65rem; color: #9ca3af; margin-bottom: 2px; display: block; }
+        .chat-input-area { display: flex; border-top: 1px solid rgba(255, 255, 255, 0.1); background: #000; }
+        .chat-input { flex: 1; background: transparent; border: none; padding: 8px 10px; color: #fff; font-family: var(--font-mono); font-size: 0.75rem; outline: none; }
+        .chat-send-btn { background: rgba(0, 255, 136, 0.2); border: none; border-right: 1px solid rgba(0, 255, 136, 0.3); color: var(--accent-green); padding: 0 15px; cursor: pointer; font-family: var(--font-mono); font-size: 0.75rem; font-weight: bold; }
+
+        .leaflet-tile { filter: brightness(0.5) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">
+            <span>💻 CYBER COMMAND V6 // تتبع وااختراق الشبكات الميدانية</span>
+        </div>
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="filterCategory('all')">الكل (60)</button>
+            <button class="tab-btn" onclick="filterCategory('targets')">الأهداف (25)</button>
+            <button class="tab-btn" onclick="filterCategory('units')">القطاع العسكري (25)</button>
+            <button class="tab-btn" onclick="filterCategory('cams')">النقاط (10)</button>
+        </div>
+        <div>
+            <span class="status-badge">● نظام الاختراق والتتبع نشط</span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- القائمة الجانبية -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>سجل المهمات والوحدات</span>
+                <span id="list-count" style="color: var(--accent-green);">0</span>
+            </div>
+            <div class="list-container" id="side-list"></div>
+        </div>
+
+        <!-- الخريطة وشات العمليات -->
+        <div class="panel" style="display: flex; flex-direction: column;">
+            <div class="panel-header">
+                <span>تتبع GPS شبكي + ربط المشتبهين في القضية</span>
+                <span style="font-size: 0.72rem; color: var(--accent-yellow);">● تم تفعيل خطوط الربط الشبكي</span>
+            </div>
+            <div style="flex: 1; position: relative;">
+                <div id="map"></div>
+            </div>
+
+            <div class="comms-panel">
+                <div class="comms-header">
+                    <span>💬 اتصالات القطاع العسكري المشفرة</span>
+                </div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-msg msg-in">
+                        <span class="msg-sender">[القطاع العسكري - صقر 1]</span>
+                        تم تحديد إشارة الجوال الخاصة بالهدف T-801. ننتظر البدء باختراق جهاز الهدف أو إرسال الأوامر.
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="أدخل الأمر التكتيكي أو استفسار المراقبة..." onkeypress="handleKeyPress(event)">
+                    <button class="chat-send-btn" onclick="sendMessage()">إرسال ↵</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- تفاصيل الملف ومركز الاختراق والتنصت -->
+        <div class="panel">
+            <div class="panel-header">
+                <span>وحدة الاختراق والتقرير الرقمي</span>
+                <span style="color: var(--accent-red);">CYBER OPERATIONAL</span>
+            </div>
+            <div class="details-content" id="details-content">
+                <div style="text-align: center; color: #6b7280; margin-top: 80px;">
+                    <p style="font-size: 1.2rem; margin-bottom: 8px;">📡</p>
+                    <p>اختر هدفاً للبدء بمسح شبكته، اعتراض بياناته، أو تنشيط أدوات الاختراق الوهمية.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const cities = [
+            { name: "الرياض - حي الملز", lat: 24.7136, lng: 46.6753 },
+            { name: "الرياض - حي العليا", lat: 24.7250, lng: 46.6600 },
+            { name: "جدة - المرفأ الشمالي", lat: 21.5433, lng: 39.1728 },
+            { name: "جدة - حي البلد", lat: 21.4858, lng: 39.1925 },
+            { name: "الدمام - الميناء", lat: 26.4207, lng: 50.0888 }
+        ];
+
+        const targetNames = [
+            "طارق القحطاني (الكاسر)", "سلمان الشمري", "خالد العتيبي", "وليد الحربي", "منصور المطيري",
+            "بدر الزهراني", "فهد الدوسري", "سعود الغامدي", "تركي السبيعي", "سطام الشهري",
+            "نايف المالكي", "فيصل العنيزي", "عمر الرشيدي", "ثامر العسيري", "راكان الخالدي",
+            "زياد البلوي", "عبدالله السهلي", "مشاري اليامي", "حامد القحطاني", "ماجد التميمي",
+            "سامي الجنيبي", "يزيد الشريف", "حمدان المري", "هاني العوفي", "نواف الجحدلي"
+        ];
+
+        const militaryNames = [
+            "صقر-1 (قيادة الميدان)", "شاهين-3 (قناصة)", "عقاب-7 (دعم اقتحام)", "نمر-4 (تطويق)", "صارم-9 (تدخل سريع)",
+            "فهد-2 (رصد إلكتروني)", "أسد-5 (مكافحة دروع)", "باز-8 (استطلاع)", "درع-10 (تأمين)", "بركان-6 (إسناد)",
+            "صقر-2 (مساندة)", "شاهين-1 (تغطية)", "عقاب-2 (اقتحام ثانٍ)", "نمر-1 (استخبارات)", "صارم-3 (دورية)",
+            "سيف-1 (تفكيك متفجرات)", "سيف-2 (تمشيط)", "رعد-4 (لوجستي)", "برق-9 (اتصالات)", "حارس-5 (تأمين)",
+            "صقر-9 (مراقبة جوية)", "شاهين-5 (قناصة 2)", "عقاب-4 (تطويق حيوي)", "نمر-8 (تدخل)", "صارم-11 (دعم)"
+        ];
+
+        const database = [];
+        const caseGroups = ["قضية الصقر الأسود #102", "قضية الشبكة العابرة #405", "قضية التهريب المالي #809"];
+
+        // 1. توليد 25 هدف مشتبه به مع بيانات شبكات
+        for (let i = 0; i < 25; i++) {
+            const loc = cities[i % cities.length];
+            const assignedCase = caseGroups[i % caseGroups.length];
+            database.push({
+                id: `T-${801 + i}`,
+                category: "targets",
+                type: "target",
+                name: targetNames[i],
+                caseName: assignedCase,
+                phone: `+966 5${Math.floor(10000000 + Math.random() * 90000000)}`,
+                ipAddress: `192.168.${Math.floor(Math.random()*100)}.${Math.floor(Math.random()*255)}`,
+                macAddress: `4A:8B:11:C${i}:${Math.floor(Math.random()*90 + 10)}:FF`,
+                imei: `86492004${100000 + i}`,
+                lastIntercept: `رسالة مشفرة: "الموعد في الموقع الساعة 02:00"`,
+                status: i % 2 === 0 ? "تحت التنصت والرصد" : "مطلوب فرار",
+                badgeClass: i % 2 === 0 ? "badge-yellow" : "badge-red",
+                lat: loc.lat + (Math.random() - 0.5) * 0.06,
+                lng: loc.lng + (Math.random() - 0.5) * 0.06,
+                locationName: loc.name,
+                details: `متهم رئيسي ضمن [${assignedCase}]. تم ربطه عبر اتصالات مكثفة بالأهداف الأخرى.`
+            });
+        }
+
+        // 2. توليد 25 فرد للقطاع العسكري
+        for (let i = 0; i < 25; i++) {
+            const loc = cities[(i + 2) % cities.length];
+            database.push({
+                id: `SEC-${101 + i}`,
+                category: "units",
+                type: "unit",
+                name: `القطاع العسكري: [${militaryNames[i]}]`,
+                status: "جاهزية ميدانية",
+                badgeClass: "badge-green",
+                lat: loc.lat + (Math.random() - 0.5) * 0.05,
+                lng: loc.lng + (Math.random() - 0.5) * 0.05,
+                locationName: loc.name,
+                details: `وحدة إسناد وتطويق تكتيكية مسؤولة عن دعم التدخل المباشر.`
+            });
+        }
+
+        // 3. توليد 10 نقاط مراقبة
+        for (let i = 0; i < 10; i++) {
+            const loc = cities[(i + 3) % cities.length];
+            database.push({
+                id: `CAM-${50 + i}`,
+                category: "cams",
+                type: "cam",
+                name: `نقطة رصد [CAM-${i + 1}]`,
+                status: "تغطية آليّة",
+                badgeClass: "badge-green",
+                lat: loc.lat + (Math.random() - 0.5) * 0.04,
+                lng: loc.lng + (Math.random() - 0.5) * 0.04,
+                locationName: loc.name,
+                details: `برج مراقبة واستشعار راداري متصل بالسيرفر الرئيسي.`
+            });
+        }
+
+        let currentFilter = 'all';
+        const map = L.map('map').setView([24.7136, 46.6753], 6);
+        const markersGroup = L.layerGroup().addTo(map);
+        const linesGroup = L.layerGroup().addTo(map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+        function initSystem() {
+            renderList();
+            renderMarkers();
+        }
+
+        function filterCategory(cat) {
+            currentFilter = cat;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderList();
+            renderMarkers();
+        }
+
+        function renderList() {
+            const container = document.getElementById('side-list');
+            container.innerHTML = '';
+            const filteredData = database.filter(item => currentFilter === 'all' || item.category === currentFilter);
+            document.getElementById('list-count').innerText = filteredData.length;
+
+            filteredData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.id = `card-${item.id}`;
+                card.onclick = () => selectItem(item.id);
+
+                const iconClass = item.type === 'unit' ? 'code-icon sec' : 'code-icon';
+
+                card.innerHTML = `
+                    <div class="${iconClass}">${item.id}</div>
+                    <div class="item-info">
+                        <h4>${item.name}</h4>
+                        <p>📍 ${item.locationName}</p>
+                        <span class="badge ${item.badgeClass}">${item.status}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderMarkers() {
+            markersGroup.clearLayers();
+            const filteredData = database.filter(item => currentFilter === 'all' || item.category === currentFilter);
+
+            filteredData.forEach(item => {
+                const marker = L.marker([item.lat, item.lng]);
+                marker.bindPopup(`<b>${item.name}</b><br>كود: ${item.id}`);
+                marker.on('click', () => selectItem(item.id));
+                markersGroup.addLayer(marker);
+            });
+        }
+
+        function drawCaseNetwork(selectedItem) {
+            linesGroup.clearLayers();
+            if (!selectedItem.caseName) return;
+
+            const relatedTargets = database.filter(d => d.caseName === selectedItem.caseName && d.id !== selectedItem.id);
+
+            relatedTargets.forEach(target => {
+                const latlngs = [
+                    [selectedItem.lat, selectedItem.lng],
+                    [target.lat, target.lng]
+                ];
+                const polyline = L.polyline(latlngs, {
+                    color: '#ff2a2a',
+                    weight: 2,
+                    dashArray: '6, 6',
+                    opacity: 0.8
+                }).addTo(linesGroup);
+
+                polyline.bindTooltip(`ربط شبكي: ${selectedItem.id} ↔ ${target.id}`, { permanent: false });
+            });
+        }
+
+        function selectItem(id) {
+            const item = database.find(d => d.id === id);
+            if (!item) return;
+
+            document.querySelectorAll('.item-card').forEach(c => c.classList.remove('active'));
+            const activeCard = document.getElementById(`card-${id}`);
+            if (activeCard) activeCard.classList.add('active');
+
+            map.flyTo([item.lat, item.lng], 10, { duration: 1 });
+            drawCaseNetwork(item);
+
+            const detailsContent = document.getElementById('details-content');
+
+            // وحدة الاختراق الرقمي للهواتف والشبكات
+            let hackHtml = '';
+            if (item.ipAddress) {
+                hackHtml = `
+                    <div class="hack-panel">
+                        <div class="hack-title">
+                            <span>💀 وحدة الاختراق والسيطرة السيبرانية</span>
+                            <span>[TARGET: ${item.id}]</span>
+                        </div>
+                        <div style="font-size:0.7rem; color:#9ca3af; margin-bottom:8px; font-family:var(--font-mono);">
+                            IP: <span style="color:#fff;">${item.ipAddress}</span> | MAC: <span style="color:#fff;">${item.macAddress}</span>
+                        </div>
+                        <div class="hack-btn-grid">
+                            <button class="hack-btn" onclick="runHackCommand('${item.id}', 'scan')">🔍 مسح المنافذ (Port Scan)</button>
+                            <button class="hack-btn" onclick="runHackCommand('${item.id}', 'inject')">⚡ حقن حزم (Packet Inject)</button>
+                            <button class="hack-btn" onclick="runHackCommand('${item.id}', 'decrypt')">🔓 فك تشفير الرسائل</button>
+                            <button class="hack-btn" onclick="runHackCommand('${item.id}', 'breach')">🚀 اختراق الجهاز الكامل</button>
+                        </div>
+                        <div class="terminal-screen" id="terminal-out">
+                            [SYSTEM READY] // اختر عملاً من الخيارات أعلاه لبدء عملية الاختراق الميدانية...
+                        </div>
+                    </div>
+                `;
+            }
+
+            // إعداد كود التنصت على الجوال
+            let phoneHtml = '';
+            if (item.phone) {
+                phoneHtml = `
+                    <div class="phone-intercept-box">
+                        <h5>
+                            <span>📱 خط اعتراض الاتصالات الرقمي</span>
+                            <span style="color:var(--accent-green)">● متصل</span>
+                        </h5>
+                        <div style="font-size:0.72rem; line-height:1.5;">
+                            <div><b>رقم الهاتف:</b> <span style="color:#fff;">${item.phone}</span></div>
+                            <div><b>IMEI:</b> <span style="color:#fff;">${item.imei}</span></div>
+                            <div style="margin-top:4px; padding:4px; background:rgba(0,0,0,0.4); border-left:2px solid var(--accent-yellow);">
+                                <b>آخر اعتراض نصي:</b><br>${item.lastIntercept}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            detailsContent.innerHTML = `
+                <div class="profile-header">
+                    <h3>${item.name}</h3>
+                    <span style="color: #9ca3af; font-size: 0.72rem;">الرمز: ${item.id}</span>
+                    ${item.caseName ? `<br><span class="badge badge-red" style="margin-top:5px;">${item.caseName}</span>` : ''}
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">الحالة الميدانية:</span>
+                    <span class="info-val">${item.status}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">النطاق الجغرافي:</span>
+                    <span class="info-val">${item.locationName}</span>
+                </div>
+
+                <div style="margin-top: 8px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 3px; border-right: 3px solid var(--border-color);">
+                    <span style="color: #9ca3af; font-size: 0.72rem;">ملخص التقرير الميداني:</span>
+                    <p style="margin-top: 4px; color: #fff; line-height: 1.4;">${item.details}</p>
+                </div>
+
+                ${phoneHtml}
+                ${hackHtml}
+            `;
+        }
+
+        // محاكاة الأوامر البرمجية للاختراق الوهمي
+        function runHackCommand(targetId, type) {
+            const terminal = document.getElementById('terminal-out');
+            if (!terminal) return;
+
+            terminal.innerHTML = `<span style="color:var(--accent-yellow)">[+] جاري الاتصال بالسيرفر المركزي وااختراق الهدف ${targetId}...</span><br>`;
+
+            setTimeout(() => {
+                if (type === 'scan') {
+                    terminal.innerHTML += `[>] NMAP Scan started on target...<br>[+] Port 80/TCP OPEN (HTTP)<br>[+] Port 22/TCP OPEN (SSH)<br>[+] Port 443/TCP OPEN (SSL)<br><span style="color:var(--accent-green)">[SUCCESS] تم اكتشاف ثغرة في منفذ SSH.</span>`;
+                } else if (type === 'inject') {
+                    terminal.innerHTML += `[>] Injecting payload to ${targetId}...<br>[>] Sending DDoS packets (64 bytes)...<br>[>] Packet loss: 0%<br><span style="color:var(--accent-green)">[SUCCESS] تم تعطيل جدار الحماية بنجاح.</span>`;
+                } else if (type === 'decrypt') {
+                    terminal.innerHTML += `[>] Bypassing AES-256 Encryption...<br>[>] Extracting RSA Private Keys...<br>[+] Decrypted 14 messages.<br><span style="color:var(--accent-green)">[SUCCESS] تم فك تشفير المحادثات السرية.</span>`;
+                } else if (type === 'breach') {
+                    terminal.innerHTML += `<span style="color:var(--accent-red)">[!] EXPLOIT EXECUTED!</span><br>[+] Root Access Granted!<br>[+] Downloading Contacts & Call Logs...<br><span style="color:var(--accent-green)">[SUCCESS] تم الاختراق الكامل والسيطرة على جهاز الهدف.</span>`;
+                }
+                terminal.scrollTop = terminal.scrollHeight;
+            }, 800);
+        }
+
+        const replies = [
+            "علم، تم استلام بيانات مسح الشبكة، وجاري المتابعة الميدانية.",
+            "فرقة القطاع العسكري متواجدة في موقع التطويق، في انتظار إشارة الاختراق الميداني.",
+            "تم ربط جهاز الهدف بالسيرفر المخفي وتحديث البيانات."
+        ];
+
+        function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const chatMessages = document.getElementById('chat-messages');
+            const outMsg = document.createElement('div');
+            outMsg.className = 'chat-msg msg-out';
+            outMsg.innerHTML = `<span class="msg-sender">[القيادة المركزية]</span>${text}`;
+            chatMessages.appendChild(outMsg);
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            setTimeout(() => {
+                const randomReply = replies[Math.floor(Math.random() * replies.length)];
+                const inMsg = document.createElement('div');
+                inMsg.className = 'chat-msg msg-in';
+                inMsg.innerHTML = `<span class="msg-sender">[القطاع العسكري]</span>${randomReply}`;
+                chatMessages.appendChild(inMsg);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 1000);
+        }
+
+        window.onload = initSystem;
+    </script>
+</body>
+</html> 
